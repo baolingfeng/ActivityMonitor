@@ -17,6 +17,7 @@ public class InteractionUtil {
 		APP_MAP.put("javaw.exe", "Eclipse");
 		APP_MAP.put("devenv.exe", "Visual Studio");
 		APP_MAP.put("WINWORD.exe", "Word Document");
+		APP_MAP.put("notepad++.exe", "Notepad++");
 		
 		UI_ENG2CHS_MAP.put("button", "°´Å¥");
 		UI_ENG2CHS_MAP.put("edit", "±à¼­");
@@ -80,6 +81,10 @@ public class InteractionUtil {
 			
 			return w;
 		}
+		else if("notepad++.exe".equals(app))
+		{
+			return  !"".equals(u.getParentWindow()) ? u.getParentWindow() : u.getWindow();
+		}
 		else
 		{
 			return !"".equals(u.getWindow()) ? u.getWindow() : u.getParentWindow();
@@ -111,9 +116,14 @@ public class InteractionUtil {
 	{
 		if("Text Editor".equals(u.getUiName()))
 		{
-			if(u.getParentUiName().contains(".cpp") || u.getParentUiName().contains(".h"))
+			String fileName = u.getParentUiName();
+			if(fileName.contains(".cpp") || fileName.contains(".h"))
 			{
-				return u.getParentUiName();
+				if(fileName.endsWith("*"))
+				{
+					fileName = fileName.substring(0, fileName.length()-1);
+				}
+				return fileName;
 			}
 		}
 		else if("Solution Explorer".equals(u.getParentUiName()))

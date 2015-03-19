@@ -1,11 +1,14 @@
 package cn.zju.edu.swing;
 
 import java.awt.EventQueue;
+import java.awt.Image;
+import java.awt.Toolkit;
 
 import javax.swing.JFrame;
 import javax.swing.JTabbedPane;
 
 import java.awt.BorderLayout;
+import java.net.URL;
 import java.util.List;
 
 import javax.swing.JTree;
@@ -20,10 +23,13 @@ import javax.swing.JScrollPane;
 import javax.swing.JPopupMenu;
 
 import java.awt.Component;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 import cn.zju.edu.manager.*;
+import cn.zju.edu.timeline.TimelineExample;
 
 import java.awt.GridLayout;
 
@@ -41,6 +47,7 @@ public class MainWindow {
 	protected CurrentActivityPane curScrollPane;
 	protected HistoryActivityPane historyScrollPane;
 	protected SearchQueryPane searchPane;
+	protected TopicPane topicPane;
 	
 	protected GroupInteractionMananger groupManager = new GroupInteractionMananger();
 	private JPanel panel;
@@ -48,7 +55,7 @@ public class MainWindow {
 	private JButton btnNewButton;
 	private JPanel panel_1;
 	private JPanel toolPanel;
-	private JButton btnNewButton_1;
+	private JButton btnTimeline;
 	//protected HistoryActivityManager histManager = HistoryActivityManager.getInstance();
 	
 	/**
@@ -79,7 +86,15 @@ public class MainWindow {
 		dm = new DataManager();
 		initialize();
 	}
-
+	
+	private void setAppIcon() throws Exception
+	{
+		URL url = MainWindow.class.getResource("/icons/appicon.png");
+		Toolkit kit = Toolkit.getDefaultToolkit();
+		Image img = kit.createImage(url);
+		frame.setIconImage(img);
+	}
+	
 	/**
 	 * Initialize the contents of the frame.
 	 */
@@ -89,6 +104,7 @@ public class MainWindow {
 		frame.setBounds(100, 100, 397, 783);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(new BorderLayout(0, 0));
+		setAppIcon();
 		
 		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
 		frame.getContentPane().add(tabbedPane);
@@ -102,12 +118,24 @@ public class MainWindow {
 		searchPane = new SearchQueryPane();
 		tabbedPane.addTab("Online Search", null, searchPane, null);
 		
+		topicPane = new TopicPane();
+		tabbedPane.addTab("Clustered Topic", null, topicPane, null);
+		
 		toolPanel = new JPanel();
 		frame.getContentPane().add(toolPanel, BorderLayout.SOUTH);
 		toolPanel.setLayout(new BoxLayout(toolPanel, BoxLayout.X_AXIS));
 		
-		btnNewButton_1 = new JButton("Activity Timeline");
-		toolPanel.add(btnNewButton_1);
+		btnTimeline = new JButton("Activity Timeline");
+		toolPanel.add(btnTimeline);
+		btnTimeline.addActionListener(new ActionListener()
+		{
+			public void actionPerformed(ActionEvent e) {
+				TimelineExample test = new TimelineExample();
+		        test.setBlockOnOpen(true);
+		        test.open();
+			}
+		});
+		
 		
 		Runnable r = new Runnable() {
 		      public void run() {
@@ -125,10 +153,12 @@ public class MainWindow {
 	
 	public void runBackground()
 	{
+		int INTERVAL_TIME = 60 * 60 * 1000;
 		try
 		{
 			while(true)
 			{
+				System.out.println("run background process....");
 				groupManager.groupInteractions();
 				
 				//HistoryActivityManager.getInstance().retrieveHistroy();
@@ -136,10 +166,11 @@ public class MainWindow {
 				historyScrollPane.createNodes();
 				
 				searchPane.createNodes();
+				topicPane.createNodes();
 				
 				HistoryActivityManager.getInstance().processScreenImage();
 				
-				Thread.sleep(60 * 60 * 1000);
+				Thread.sleep(INTERVAL_TIME);
 			}
 		}catch(Exception e)
 		{

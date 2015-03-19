@@ -9,6 +9,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map.Entry;
 
 import javax.swing.BoxLayout;
@@ -31,11 +32,14 @@ import cn.zju.edu.manager.HistoryActivityManager;
 import cn.zju.edu.manager.IconManager;
 import cn.zju.edu.swing.HistoryActivityPane.HistoryTreeCellRenderer;
 import cn.zju.edu.blf.dao.*;
+import cn.zju.edu.util.QuerySeqUtil;
+import cn.zju.edu.util.CommonUtil;
 
 public class SearchQueryPane extends JPanel implements ActionListener{
 	protected DefaultMutableTreeNode rootNode;
 	protected DefaultMutableTreeNode node1;
 	protected DefaultMutableTreeNode node2;
+	protected DefaultMutableTreeNode node3;
 	protected DefaultTreeModel treeModel;
 	protected JTree tree;
 	
@@ -57,9 +61,11 @@ public class SearchQueryPane extends JPanel implements ActionListener{
 	   
 	    node1 = new DefaultMutableTreeNode("Queries");
 	    node2 = new DefaultMutableTreeNode("Most Used Keywords");
+	    node3 = new DefaultMutableTreeNode("Most Used Keyword Pairs");
 	    
 	    rootNode.add(node1);
 	    rootNode.add(node2);
+	    rootNode.add(node3);
 	    
 	    JScrollPane scrollPane = new JScrollPane(tree);
 	    add(scrollPane, BorderLayout.CENTER);
@@ -89,15 +95,74 @@ public class SearchQueryPane extends JPanel implements ActionListener{
 	
 	public void createNodes()
 	{
+		node1.removeAllChildren();
+		node2.removeAllChildren();
+		node3.removeAllChildren();
+		
+		HashMap<String, Integer> keyMap = new HashMap<String, Integer>();
+		HashMap<KeyPair, Integer> keypairMap = new HashMap<KeyPair, Integer>();
+		
 		try
 		{
 			queries = HistoryActivityManager.getInstance().getSearchQueries();
 			for(Entry<SearchQuery, String> entry : queries.entrySet())
 			{
 				treeModel.insertNodeInto(new DefaultMutableTreeNode(entry.getKey()) , node1, node1.getChildCount());
+				
+				List<String> keys = QuerySeqUtil.segQuery(entry.getKey().getQuery());
+				for(int i=0; i<keys.size(); i++)
+				{
+					String k = keys.get(i);
+					if(keyMap.containsKey(k))
+					{
+						keyMap.put(k, keyMap.get(k)+1);
+					}
+					else
+					{
+						keyMap.put(k, 1);
+					}
+					
+					for(int j=i+1; j<keys.size(); j++)
+					{
+						String k2 = keys.get(j);
+						if(k.equals(k2)) continue;
+						
+						KeyPair pair = new KeyPair(k, k2);
+						if(keypairMap.containsKey(pair))
+						{
+							keypairMap.put(pair, keypairMap.get(pair)+1);
+						}
+						else
+						{
+							keypairMap.put(pair, 1);
+						}
+					}
+				}
+			}
+			
+			HashMap<String, Integer> map2 = CommonUtil.sortByValuesDesc(keyMap);
+			for(Entry<String, Integer> entry2 : map2.entrySet())
+			{
+				if(entry2.getValue() > 5)
+				{
+					treeModel.insertNodeInto(new DefaultMutableTreeNode(entry2.getKey() + "(" + entry2.getValue() + ")") , node2, node2.getChildCount());
+				}
+			}
+			
+			HashMap<KeyPair, Integer> map3 = CommonUtil.sortByValuesDesc(keypairMap);
+			for(Entry<KeyPair, Integer> entry3 : map3.entrySet())
+			{
+				if(entry3.getValue() > 5)
+				{
+					treeModel.insertNodeInto(new DefaultMutableTreeNode(entry3.getKey().getK1() + "/" + entry3.getKey().getK2() + "(" + entry3.getValue() + ")") , node3, node3.getChildCount());
+				}
 			}
 			
 			treeModel.reload();
+			//for(int i=0; i<tree.getRowCount(); i++)
+			//{
+			//	tree.expandRow(i);
+			//}
 		}catch(Exception e)
 		{
 			e.printStackTrace();

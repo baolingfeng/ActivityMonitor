@@ -103,17 +103,7 @@ public class TimelineExample extends ApplicationWindow {
         {
         	HistoryActivityManager.getInstance().retrieveHistroy();
         	model = HistoryActivityManager.getInstance().createTimeModel();
-	        /*
-        	DataManager dm = new DataManager();
-	        String sql = "select * from tbl_interactions where user_name = '" + "baolingfeng" + "'" 
-					//+ " and " + "timestamp>='2015-02-04 15:25:10.937' and timestamp<='2015-02-04 15:25:32.568'"
-					+ " order by timestamp";
-	        
-	        dm.getInteractionData(sql);
-	        dm.aggrLLInteractions();
-	        		
-	        model = dm.createTimeModel();
-	        */
+	      
 	        System.out.println("Model start "+model.getMinDate().toDisplayString());
 	        System.out.println("Model end "+model.getMaxDate().toDisplayString());
         }
@@ -153,7 +143,6 @@ public class TimelineExample extends ApplicationWindow {
                     System.out.println(interval.toString());
                 } 
             }
-            
         });
        
         MenuManager mm = new MenuManager();
@@ -310,7 +299,7 @@ public class TimelineExample extends ApplicationWindow {
 
         });
 
-        _tbv.setStartDate(new JaretDate(20, 11, 1963, 0, 0, 0));
+        _tbv.setStartDate(new JaretDate(1, 1, 2015, 0, 0, 0));
         _tbv2.redraw();
 
         return _tbv;

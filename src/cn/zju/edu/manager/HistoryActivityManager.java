@@ -1,6 +1,8 @@
 package cn.zju.edu.manager;
 
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -8,8 +10,17 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+
+import org.carrot2.clustering.lingo.LingoClusteringAlgorithm;
+import org.carrot2.core.Cluster;
+import org.carrot2.core.Controller;
+import org.carrot2.core.ControllerFactory;
+import org.carrot2.core.Document;
+import org.carrot2.core.LanguageCode;
+import org.carrot2.core.ProcessingResult;
 
 import cn.zju.edu.blf.dao.GroupedInteraction;
 import cn.zju.edu.blf.dao.LowLevelInteraction;
@@ -38,14 +49,40 @@ public class HistoryActivityManager {
 	private HashMap<SearchQuery, String> queries = new HashMap<SearchQuery, String>();
 	//protected HashMap<GroupedInteraction, Double> aggrGroups;
 	
+	private List<String> CLUSTER_FILTER_WORDS = new ArrayList<String>();
+	
 	private static HistoryActivityManager instance = null;
 
 	private HistoryActivityManager() throws Exception
 	{ 
 		user = System.getProperty("user.name");
 		db = new DBImpl();
+		
+		readFilterWords();
 	}
-
+	
+	private void readFilterWords()
+	{
+		try
+		{
+			BufferedReader br = new BufferedReader(new InputStreamReader(HistoryActivityManager.class.getResourceAsStream("/config/cluster_filter_words.txt"))); 
+			
+			String line = br.readLine();
+			while(line != null && !"".equals(line))
+			{
+				CLUSTER_FILTER_WORDS.add(line);
+				
+				line = br.readLine();
+			}
+			
+			br.close();
+			
+		}catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+	
 	public static HistoryActivityManager getInstance() throws Exception
 	{
       if(instance == null) {
@@ -95,6 +132,7 @@ public class HistoryActivityManager {
 				if(g.getDetails().size() >= 0)
 				{
 					queries.put(sq, g.getDetails().get(0).getTime());
+					System.out.println("new Query: " + sq.getQuery());
 				}
 			}
 		}
@@ -109,6 +147,8 @@ public class HistoryActivityManager {
 		
 		Collections.sort(aggrGroups);
 		Collections.reverse(aggrGroups);
+		
+		//clusterWebTitleTopic();
 	}
 	
 	public SearchQuery getSearchQuery(GroupedInteraction g)
@@ -503,6 +543,64 @@ public class HistoryActivityManager {
 		}
 		model.addRow(row);
 		return model;
+	}
+	
+	public List<Cluster> clusterWebTitleTopic(String timestamp) throws Exception
+	{
+		ArrayList<Document> documents = new ArrayList<Document>();
+		
+		for(GroupedInteraction g : aggrGroups)
+		{
+			if(InteractionUtil.isBrowser(g.getApplication()))
+			{
+				if(timestamp != null && !"".equals(timestamp))
+				{
+					if(g.getDetails().size() >= 0)
+					{
+						String gt = g.getDetails().get(g.getDetails().size()-1).getTime();
+						
+						if( DateUtil.calcInterval(timestamp, gt) < 0 )
+						{
+							continue;
+						}
+					}
+				}
+				
+				String title = g.getTitle();
+				for(int i=0; i<CLUSTER_FILTER_WORDS.size(); i++)
+				{
+					if(g.getTitle().contains(CLUSTER_FILTER_WORDS.get(i)))
+					{
+						title = title.replaceAll(CLUSTER_FILTER_WORDS.get(i), "");
+					}
+				}
+				if(title.startsWith("http://"))
+				{
+					continue;
+				}
+				
+				Document doc = new Document(title,title,g.getTitle());
+			    doc.setLanguage(LanguageCode.CHINESE_SIMPLIFIED);
+			    documents.add(doc);
+			}
+		}
+		
+		final Controller controller = ControllerFactory.createSimple();
+		 
+		 LingoClusteringAlgorithm al = new LingoClusteringAlgorithm();
+		 al.desiredClusterCountBase = 30;
+		 
+		 Map<String, Object> attributes = new HashMap<String, Object>(); 
+		
+		 attributes.put("LingoClusteringAlgorithm.desiredClusterCountBase", 10); 
+		 
+         controller.init(attributes);
+         
+         final ProcessingResult byTopicClusters = controller.process(documents, "*",LingoClusteringAlgorithm.class);
+		 
+		         
+		 return byTopicClusters.getClusters();
+		 
 	}
 	
 	public static void main(String[] args) throws Exception

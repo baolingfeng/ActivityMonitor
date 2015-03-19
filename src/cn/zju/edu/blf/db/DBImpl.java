@@ -1,9 +1,14 @@
 package cn.zju.edu.blf.db;
 
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -20,6 +25,7 @@ import cn.zju.edu.blf.dao.LowLevelInteraction;
 import cn.zju.edu.blf.dao.CResource;
 import cn.zju.edu.blf.dao.GroupedInteraction;
 import cn.zju.edu.blf.dao.GroupDetail;
+import cn.zju.edu.manager.IconManager;
 
 public class DBImpl {
 	private static String URL = "jdbc:mysql://155.69.147.247:3306/hci";
@@ -28,8 +34,41 @@ public class DBImpl {
 	
 	private Connection connection;
 	
+	private void readDBConfig()
+	{
+		try
+		{
+			//File f = new File("db.txt");
+			//InputStream is = new FileInputStream(f);
+			BufferedReader br = new BufferedReader(new InputStreamReader(DBImpl.class.getResourceAsStream("/config/db.txt"))); 
+			String line = br.readLine();
+
+	        while (line != null) {
+	            String[] params = line.split("=");
+	        	if("HOST".equals(params[0]))
+	        	{
+	        		URL = params[1];
+	        	}
+	        	else if("USER".equals(params[0]))
+	        	{
+	        		USER_NAME = params[1];
+	        	}
+	        	else if("PASSWORD".equals(params[0]))
+	        	{
+	        		PASSWORD = params[1];
+	        	}
+	            
+	            line = br.readLine();
+	        }
+		}catch(Exception e)
+		{
+			System.out.println("read db config error: " + e.getMessage());
+		}
+	}
+	
 	public DBImpl() throws Exception
 	{
+		readDBConfig();
 		connection = getConnection();
 	}
 	
@@ -385,9 +424,9 @@ public class DBImpl {
 		pStat.close();
 	}
 	
-	public String getMaxTimeOfHasGrouped() throws SQLException
+	public String getMaxTimeOfHasGrouped(String user) throws SQLException
 	{
-		String sql = "select max(interaction_time) from tbl_group_detail";
+		String sql = "select max(interaction_time) from tbl_group_detail a, tbl_group_interactions b where a.group_id = b.group_id and b.user_name = '" + user + "'";
 		
 		Statement stat = connection.createStatement();
 		

@@ -2,6 +2,7 @@ package cn.zju.edu.util;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 
 import de.jaret.util.date.JaretDate;
@@ -40,6 +41,16 @@ public class DateUtil {
 	{
 		Date now = new Date();
 		return (now.getTime() - formatTime(t).getTime() * 1.0) / 1000;
+	}
+	
+	public static String getDayBeforeOrAfter(Date d, int day)
+	{
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(d);
+		cal.add(Calendar.DATE, day);
+		Date newDate = cal.getTime();
+		
+		return fromDate(newDate, "yyyy-MM-dd HH:mm:ss.SSS");
 	}
 	
 	@SuppressWarnings("deprecation")

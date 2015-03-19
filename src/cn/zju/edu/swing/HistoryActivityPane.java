@@ -127,6 +127,10 @@ public class HistoryActivityPane  extends JPanel{
 		}
 		
 		treeModel.reload();
+		for(int i=0; i<tree.getRowCount(); i++)
+		{
+			tree.expandRow(i);
+		}
 	}
 	
 	class HistoryTreeCellRenderer extends DefaultTreeCellRenderer implements TreeCellRenderer {

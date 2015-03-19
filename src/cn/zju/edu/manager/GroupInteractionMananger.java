@@ -26,7 +26,7 @@ public class GroupInteractionMananger {
 	
 	public void groupInteractions() throws Exception
 	{
-		String t = db.getMaxTimeOfHasGrouped();
+		String t = db.getMaxTimeOfHasGrouped(user);
 		
 		String sql = "select * from tbl_interactions where user_name = '" + user + "'";
 		if(t!= null && !"".equals(t))
